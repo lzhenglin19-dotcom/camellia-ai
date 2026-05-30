@@ -534,7 +534,203 @@
       }
     }
 
-    /* Error toast */
+    /* === TTS Button on AI messages === */
+    .msg-tts-btn {
+      background: none; border: none;
+      color: var(--text-dim); cursor: pointer;
+      padding: 4px 6px; border-radius: 6px;
+      font-size: 0.7rem;
+      display: inline-flex; align-items: center; gap: 4px;
+      transition: all 0.25s ease;
+      opacity: 0.4;
+      margin-left: 4px;
+      vertical-align: middle;
+    }
+    .msg-tts-btn:hover { opacity: 1; color: white; background: rgba(255,255,255,0.06); }
+    .msg-tts-btn.speaking {
+      color: #4ade80; opacity: 1;
+      animation: tts-pulse 1s ease-in-out infinite;
+    }
+    @keyframes tts-pulse {
+      0%, 100% { text-shadow: 0 0 4px rgba(74,222,128,0.3); }
+      50% { text-shadow: 0 0 12px rgba(74,222,128,0.7); }
+    }
+
+    /* Voice selector panel */
+    .voice-panel {
+      position: fixed; z-index: 50;
+      bottom: 90px; right: 20px;
+      background: rgba(10,15,13,0.92);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px 18px;
+      min-width: 220px;
+      transform: translateY(12px);
+      opacity: 0; pointer-events: none;
+      transition: all 0.3s cubic-bezier(0.22,1,0.36,1);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+    }
+    .voice-panel.open {
+      transform: translateY(0);
+      opacity: 1; pointer-events: all;
+    }
+    .voice-panel h4 {
+      font-size: 0.7rem; letter-spacing: 0.15em;
+      color: var(--text-dim); margin-bottom: 10px;
+      font-weight: 300;
+    }
+    .voice-option {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 10px; border-radius: 8px;
+      cursor: pointer; transition: all 0.2s;
+      font-size: 0.82rem; color: var(--text);
+    }
+    .voice-option:hover { background: rgba(255,255,255,0.06); }
+    .voice-option.active { background: rgba(255,255,255,0.1); color: white; }
+    .voice-option .radio {
+      width: 14px; height: 14px; border-radius: 50%;
+      border: 2px solid var(--text-dim);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .voice-option.active .radio { border-color: #4ade80; }
+    .voice-option.active .radio::after {
+      content: ''; width: 6px; height: 6px;
+      border-radius: 50%; background: #4ade80;
+    }
+    .voice-option .vname { flex: 1; }
+    .voice-option .vlang { font-size: 0.65rem; color: var(--text-dim); }
+
+    /* Voice selector toggle button */
+    #voiceToggleBtn {
+      position: relative;
+    }
+    #voiceToggleBtn.has-voices {
+      border-color: rgba(74,222,128,0.3);
+      color: rgba(74,222,128,0.7);
+    }
+
+    /* Floating particles background */
+    .particles-bg {
+      position: fixed; inset: 0; z-index: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+    .particle-dot {
+      position: absolute;
+      width: 3px; height: 3px;
+      background: rgba(255,255,255,0.3);
+      border-radius: 50%;
+      animation: particle-float linear infinite;
+    }
+    @keyframes particle-float {
+      0% { transform: translateY(100vh) scale(0); opacity: 0; }
+      10% { opacity: 1; }
+      90% { opacity: 1; }
+      100% { transform: translateY(-10vh) scale(1); opacity: 0; }
+    }
+
+    /* Floating petal particles */
+    .petal-particle {
+      position: fixed;
+      z-index: 0; pointer-events: none;
+      font-size: 1.2rem;
+      opacity: 0.12;
+      animation: petal-drift linear infinite;
+    }
+    @keyframes petal-drift {
+      0% { transform: translateY(100vh) rotate(0deg) translateX(0); opacity: 0; }
+      10% { opacity: 0.12; }
+      90% { opacity: 0.08; }
+      100% { transform: translateY(-5vh) rotate(360deg) translateX(80px); opacity: 0; }
+    }
+
+    /* Enhanced glow on the bg */
+    .bg .glow-spot {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      pointer-events: none;
+      animation: glow-drift 8s ease-in-out infinite alternate;
+    }
+    .bg .glow-spot:nth-child(1) {
+      width: 300px; height: 300px;
+      background: rgba(255,255,255,0.04);
+      top: 20%; left: 30%;
+      animation-delay: 0s;
+    }
+    .bg .glow-spot:nth-child(2) {
+      width: 200px; height: 200px;
+      background: rgba(180,255,220,0.03);
+      top: 60%; left: 60%;
+      animation-delay: -3s;
+    }
+    .bg .glow-spot:nth-child(3) {
+      width: 250px; height: 250px;
+      background: rgba(255,220,240,0.02);
+      top: 40%; left: 10%;
+      animation-delay: -6s;
+    }
+    @keyframes glow-drift {
+      0% { transform: translate(0, 0) scale(1); opacity: 0.5; }
+      100% { transform: translate(30px, -20px) scale(1.2); opacity: 1; }
+    }
+
+    /* === FIXED: Mobile input bar overflow fix === */
+    @media (max-width: 768px) {
+      .btn-group {
+        flex-shrink: 0;
+      }
+      .input-container {
+        flex-wrap: nowrap;
+        width: 100%;
+      }
+      .input-container > div:first-child {
+        min-width: 0;
+        flex: 1;
+      }
+      .icon-btn.send-btn {
+        width: 34px; height: 34px;
+        flex-shrink: 0;
+      }
+      .voice-panel {
+        right: 10px; bottom: 80px;
+        min-width: 190px;
+      }
+    }
+
+    @media (max-width: 400px) {
+      .btn-group {
+        gap: 4px;
+      }
+      .voice-panel {
+        right: 6px; left: 6px;
+        bottom: 76px;
+        min-width: unset;
+      }
+    }
+
+    @media (max-width: 360px) {
+      .input-container {
+        padding: 5px 5px 5px 10px;
+        gap: 4px;
+      }
+      .icon-btn {
+        width: 28px; height: 28px;
+      }
+      .icon-btn svg {
+        width: 11px; height: 11px;
+      }
+      .icon-btn.send-btn {
+        width: 28px; height: 28px;
+      }
+      textarea {
+        font-size: 16px;
+      }
+    }
+
+    /* Toast */
     .toast {
       position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%);
       background: rgba(200, 60, 60, 0.85); backdrop-filter: blur(10px);
@@ -548,7 +744,12 @@
   </style>
 </head>
 <body>
-<div class="bg"></div>
+<div class="bg">
+  <div class="glow-spot"></div>
+  <div class="glow-spot"></div>
+  <div class="glow-spot"></div>
+</div>
+<div class="particles-bg" id="particlesBg"></div>
 <div class="app">
 
   <!-- Header -->
@@ -638,6 +839,11 @@
             <path d="M12 1a4 4 0 0 1 4 4v6a4 4 0 0 1-8 0V5a4 4 0 0 1 4-4zm-6 9a6 6 0 0 0 12 0h2a8 8 0 0 1-7 7.93V20h3v2H8v-2h3v-3.07A8 8 0 0 1 4 10h2z"/>
           </svg>
         </button>
+        <button class="icon-btn" id="voiceToggleBtn" title="朗读声音设置">
+          <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 8.5v7a4.49 4.49 0 0 0 2.5-3.5zm2.5 0A7.5 7.5 0 0 0 14 5.5v2a5.5 5.5 0 0 1 0 9v2A7.5 7.5 0 0 0 19 12z"/>
+          </svg>
+        </button>
         <button class="icon-btn send-btn" id="sendBtn" title="发送">
           <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
             <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
@@ -648,13 +854,19 @@
     <p class="hint">按 Enter 发送 · 点击麦克风使用语音输入</p>
   </div>
 
+  <!-- Voice Selector Panel -->
+  <div class="voice-panel" id="voicePanel">
+    <h4>朗读声线</h4>
+    <div id="voiceList"></div>
+  </div>
+
 </div>
 
 <script>
 
-  const API_KEY   = 'sk-9b198fdb56814bb6850e7fb1fd39d25d';   // ← 替换为你的 API Key
+  const API_KEY   = 'sk-9b198fdb56814bb6850e7fb1fd39d25d';
   const API_URL   = 'https://api.deepseek.com/chat/completions';
-  const MODEL     = 'deepseek-chat';       // DeepSeek 模型名
+  const MODEL     = 'deepseek-chat';
 
   const SYSTEM_PROMPT = `你是 Camellia（白山茶），一个温柔、内敛的 AI 助手。
 你的性格如白山茶花：纯净、温柔、不张扬，像童年时的邻家小妹一样。
@@ -663,9 +875,12 @@
 
   // ─── STATE ────────────────────────────────────────────────
   const conversationHistory = [];
-  const MAX_HISTORY = 20; // 最多保留 20 轮对话
+  const MAX_HISTORY = 20;
   let isRecognizing = false;
   let recognition = null;
+  let currentUtterance = null;
+  let currentSpeakingMsg = null;
+  let selectedVoiceURI = '';
 
   // ─── ELEMENTS ─────────────────────────────────────────────
   const chatArea     = document.getElementById('chatArea');
@@ -674,6 +889,9 @@
   const micBtn       = document.getElementById('micBtn');
   const micWave      = document.getElementById('micWave');
   const avatar       = document.getElementById('camelliaAvatar');
+  const voiceToggle  = document.getElementById('voiceToggleBtn');
+  const voicePanel   = document.getElementById('voicePanel');
+  const voiceList    = document.getElementById('voiceList');
 
   // ─── AUTO-RESIZE TEXTAREA ─────────────────────────────────
   userInput.addEventListener('input', () => {
@@ -688,7 +906,7 @@
   });
   sendBtn.addEventListener('click', sendMessage);
 
-  // ─── AVATAR GLOW ──────────────────────────────────────────
+  // ─── AVATAR BREATHING ─────────────────────────────────────
   function setAvatarSpeaking(on) {
     if (on) avatar.classList.add('breathing');
     else     avatar.classList.remove('breathing');
@@ -709,6 +927,21 @@
 
     wrap.appendChild(av);
     wrap.appendChild(bubble);
+
+    // Add TTS button for AI messages
+    if (role === 'ai') {
+      const ttsBtn = document.createElement('button');
+      ttsBtn.className = 'msg-tts-btn';
+      ttsBtn.innerHTML = '🔊 <span>朗读</span>';
+      ttsBtn.title = '朗读此回复';
+      ttsBtn.dataset.text = text;
+      ttsBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleTTS(ttsBtn, text);
+      });
+      bubble.appendChild(ttsBtn);
+    }
+
     chatArea.appendChild(wrap);
     chatArea.scrollTop = chatArea.scrollHeight;
     return bubble;
@@ -757,7 +990,7 @@
 
     conversationHistory.push({ role: 'user', content: text });
     if (conversationHistory.length > MAX_HISTORY * 2) {
-      conversationHistory.splice(0, 2); // 裁剪最早的一组问答
+      conversationHistory.splice(0, 2);
     }
 
     showTyping();
@@ -807,13 +1040,164 @@
     }
   }
 
+  // ─── TEXT-TO-SPEECH ───────────────────────────────────────
+  let synth = window.speechSynthesis;
+  let availableVoices = [];
+
+  function loadVoices() {
+    return new Promise((resolve) => {
+      const voices = synth.getVoices();
+      if (voices.length > 0) {
+        availableVoices = voices;
+        resolve(voices);
+      } else {
+        synth.onvoiceschanged = () => {
+          availableVoices = synth.getVoices();
+          resolve(availableVoices);
+        };
+      }
+    });
+  }
+
+  function populateVoicePanel() {
+    voiceList.innerHTML = '';
+    // Filter to Chinese + English voices, prefer natural-sounding ones
+    const preferred = availableVoices.filter(v =>
+      v.lang.startsWith('zh') || v.lang.startsWith('en')
+    );
+    // If no Chinese/English voices, show all
+    const display = preferred.length > 0 ? preferred : availableVoices;
+    if (display.length === 0) {
+      voiceList.innerHTML = '<div style="font-size:0.75rem;color:var(--text-dim);padding:6px 0;">暂无可用声线</div>';
+      return;
+    }
+
+    // Deduplicate by name
+    const seen = new Set();
+    const deduped = display.filter(v => {
+      const key = v.name + v.lang;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+
+    // If no selection yet, set default to first Chinese voice
+    if (!selectedVoiceURI && deduped.length > 0) {
+      const zhVoice = deduped.find(v => v.lang.startsWith('zh'));
+      selectedVoiceURI = zhVoice ? zhVoice.voiceURI : deduped[0].voiceURI;
+    }
+
+    deduped.forEach(v => {
+      const opt = document.createElement('div');
+      opt.className = 'voice-option';
+      if (v.voiceURI === selectedVoiceURI) opt.classList.add('active');
+      const langLabel = v.lang.replace('_', '-');
+      opt.innerHTML = `
+        <div class="radio"></div>
+        <span class="vname">${v.name}</span>
+        <span class="vlang">${langLabel}</span>
+      `;
+      opt.addEventListener('click', () => {
+        selectedVoiceURI = v.voiceURI;
+        document.querySelectorAll('.voice-option').forEach(o => o.classList.remove('active'));
+        opt.classList.add('active');
+        voiceToggle.classList.add('has-voices');
+        showToast('声线已切换至：' + v.name);
+      });
+      voiceList.appendChild(opt);
+    });
+    if (deduped.length > 0) voiceToggle.classList.add('has-voices');
+  }
+
+  function getSelectedVoice() {
+    return availableVoices.find(v => v.voiceURI === selectedVoiceURI) || null;
+  }
+
+  function toggleTTS(btn, text) {
+    if (!synth) return;
+    // If currently speaking this message, stop
+    if (currentSpeakingMsg === btn && synth.speaking) {
+      synth.cancel();
+      currentSpeakingMsg = null;
+      btn.classList.remove('speaking');
+      btn.innerHTML = '🔊 <span>朗读</span>';
+      setAvatarSpeaking(false);
+      return;
+    }
+    // Stop any current speech
+    synth.cancel();
+    document.querySelectorAll('.msg-tts-btn.speaking').forEach(b => {
+      b.classList.remove('speaking');
+      b.innerHTML = '🔊 <span>朗读</span>';
+    });
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    const voice = getSelectedVoice();
+    if (voice) utterance.voice = voice;
+    utterance.lang = voice ? voice.lang : 'zh-CN';
+    utterance.rate = 1.0;
+    utterance.pitch = 1.0;
+    utterance.volume = 1.0;
+
+    utterance.onstart = () => {
+      currentUtterance = utterance;
+      currentSpeakingMsg = btn;
+      btn.classList.add('speaking');
+      btn.innerHTML = '⏹ <span>停止</span>';
+      setAvatarSpeaking(true);
+    };
+
+    utterance.onend = () => {
+      currentUtterance = null;
+      currentSpeakingMsg = null;
+      btn.classList.remove('speaking');
+      btn.innerHTML = '🔊 <span>朗读</span>';
+      setAvatarSpeaking(false);
+    };
+
+    utterance.onerror = (e) => {
+      console.error('TTS error:', e);
+      currentUtterance = null;
+      currentSpeakingMsg = null;
+      btn.classList.remove('speaking');
+      btn.innerHTML = '🔊 <span>朗读</span>';
+      setAvatarSpeaking(false);
+    };
+
+    synth.speak(utterance);
+  }
+
+  // ─── VOICE PANEL TOGGLE ───────────────────────────────────
+  voiceToggle.addEventListener('click', () => {
+    voicePanel.classList.toggle('open');
+  });
+  // Close panel when clicking outside
+  document.addEventListener('click', (e) => {
+    if (!voicePanel.contains(e.target) && e.target !== voiceToggle && !voiceToggle.contains(e.target)) {
+      voicePanel.classList.remove('open');
+    }
+  });
+
   // ─── SPEECH RECOGNITION ───────────────────────────────────
   function setupSpeech() {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+
     if (!SR) {
-      micBtn.title = '您的浏览器不支持语音识别';
-      micBtn.style.opacity = '0.3';
-      micBtn.disabled = true;
+      // Mobile fallback: use input's native dictation
+      const isMobile = /Android|iPhone|iPad|iPod|webOS/i.test(navigator.userAgent);
+      if (isMobile) {
+        micBtn.title = '轻触后使用键盘自带语音输入';
+        micBtn.style.opacity = '0.6';
+        // On mobile, clicking mic focuses the textarea to bring up keyboard dictation
+        micBtn.addEventListener('click', () => {
+          userInput.focus();
+          showToast('请在键盘上点击麦克风图标使用语音输入');
+        });
+      } else {
+        micBtn.title = '您的浏览器不支持语音识别';
+        micBtn.style.opacity = '0.3';
+        micBtn.disabled = true;
+      }
       return;
     }
 
@@ -851,17 +1235,87 @@
       isRecognizing = false;
       micBtn.classList.remove('active');
       micWave.classList.remove('active');
-      if (e.error !== 'no-speech') showToast('语音识别失败：' + e.error);
+      if (e.error === 'not-allowed') {
+        showToast('请允许使用麦克风权限');
+      } else if (e.error !== 'no-speech') {
+        showToast('语音识别失败：' + e.error);
+      }
     };
 
     micBtn.addEventListener('click', () => {
       if (isRecognizing) { recognition.stop(); return; }
       try { recognition.start(); }
-      catch(e) { console.error(e); }
+      catch(e) { console.error(e); showToast('无法启动语音识别'); }
     });
   }
 
+  // ─── FLOATING PARTICLES ───────────────────────────────────
+  function createParticles() {
+    const container = document.getElementById('particlesBg');
+    if (!container) return;
+
+    // Small floating dots
+    for (let i = 0; i < 30; i++) {
+      const dot = document.createElement('div');
+      dot.className = 'particle-dot';
+      dot.style.left = Math.random() * 100 + '%';
+      dot.style.width = (Math.random() * 3 + 1) + 'px';
+      dot.style.height = dot.style.width;
+      dot.style.animationDuration = (Math.random() * 15 + 10) + 's';
+      dot.style.animationDelay = (Math.random() * 15) + 's';
+      dot.style.opacity = Math.random() * 0.3 + 0.1;
+      container.appendChild(dot);
+    }
+
+    // Floating petal-like symbols
+    const symbols = ['❀', '✿', '❁', '✦', '·'];
+    for (let i = 0; i < 8; i++) {
+      const petal = document.createElement('div');
+      petal.className = 'petal-particle';
+      petal.textContent = symbols[i % symbols.length];
+      petal.style.left = Math.random() * 90 + 5 + '%';
+      petal.style.fontSize = (Math.random() * 12 + 10) + 'px';
+      petal.style.animationDuration = (Math.random() * 20 + 20) + 's';
+      petal.style.animationDelay = (Math.random() * 20) + 's';
+      container.appendChild(petal);
+    }
+  }
+
+  // ─── MESSAGE ENTER ANIMATION ──────────────────────────────
+  function animateMessageIn(el) {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(12px)';
+    requestAnimationFrame(() => {
+      el.style.transition = 'opacity 0.4s cubic-bezier(0.22,1,0.36,1), transform 0.4s cubic-bezier(0.22,1,0.36,1)';
+      el.style.opacity = '1';
+      el.style.transform = 'translateY(0)';
+    });
+  }
+
+  // ─── INIT ─────────────────────────────────────────────────
   setupSpeech();
+  createParticles();
+
+  // Initialize TTS voices
+  loadVoices().then(voices => {
+    populateVoicePanel();
+  });
+  // Reload voices when they change (e.g., on Chrome)
+  if (synth) {
+    synth.onvoiceschanged = () => {
+      availableVoices = synth.getVoices();
+      populateVoicePanel();
+    };
+  }
+
+  // Also re-check voices after a delay for Safari
+  setTimeout(async () => {
+    const voices = synth.getVoices();
+    if (voices.length > availableVoices.length) {
+      availableVoices = voices;
+      populateVoicePanel();
+    }
+  }, 1000);
 </script>
 </body>
 </html>
