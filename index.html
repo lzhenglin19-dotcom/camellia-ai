@@ -698,10 +698,14 @@
       border-radius: 16px;
       padding: 16px 18px;
       min-width: 220px;
+      max-height: 55vh;
+      max-height: calc(100dvh - 160px);
       transform: translateY(12px);
       opacity: 0; pointer-events: none;
       transition: all 0.3s cubic-bezier(0.22,1,0.36,1);
       box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+      display: flex; flex-direction: column;
+      overflow: hidden;
     }
     .voice-panel.open {
       transform: translateY(0);
@@ -711,7 +715,20 @@
       font-size: 0.7rem; letter-spacing: 0.15em;
       color: var(--text-dim); margin-bottom: 10px;
       font-weight: 300;
+      flex-shrink: 0;
     }
+    #voiceList {
+      overflow-y: auto;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+      flex: 1;
+      min-height: 0;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) transparent;
+      overscroll-behavior: contain;
+    }
+    #voiceList::-webkit-scrollbar { width: 3px; }
+    #voiceList::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
     .voice-option {
       display: flex; align-items: center; gap: 10px;
       padding: 8px 10px; border-radius: 8px;
@@ -844,7 +861,9 @@
       }
       .voice-panel {
         right: 10px; bottom: 80px;
-        min-width: 190px;
+        min-width: 200px;
+        max-height: 55vh;
+        max-height: calc(100dvh - 150px);
       }
     }
 
@@ -853,9 +872,12 @@
         gap: 4px;
       }
       .voice-panel {
-        right: 6px; left: 6px;
+        right: 8px; left: 8px;
         bottom: 76px;
         min-width: unset;
+        max-height: 55vh;
+        max-height: calc(100dvh - 150px);
+        padding: 14px 14px;
       }
     }
 
@@ -1271,6 +1293,8 @@
   // ─── TEXT-TO-SPEECH ───────────────────────────────────────
   let synth = window.speechSynthesis;
   let availableVoices = [];
+  let voiceLoadRetries = 0;
+  const MAX_VOICE_RETRIES = 10;
 
   function loadVoices() {
     return new Promise((resolve) => {
@@ -1287,20 +1311,56 @@
     });
   }
 
+  /**
+   * Retry voice loading with exponential backoff.
+   * On iOS Safari, Chinese voices often load much later than English ones.
+   * This function keeps polling until we find Chinese voices or hit max retries.
+   */
+  function retryLoadVoices() {
+    const voices = synth.getVoices();
+    const hasChinese = voices.some(v => v.lang.startsWith('zh'));
+    const hasEnglish = voices.some(v => v.lang.startsWith('en'));
+
+    // Update available voices if we got new ones
+    if (voices.length > availableVoices.length) {
+      availableVoices = voices;
+      populateVoicePanel();
+    }
+
+    // Keep retrying if we still don't have Chinese voices
+    if (!hasChinese && voiceLoadRetries < MAX_VOICE_RETRIES) {
+      voiceLoadRetries++;
+      const delay = Math.min(300 * Math.pow(1.4, voiceLoadRetries), 4000);
+      setTimeout(retryLoadVoices, delay);
+    }
+  }
+
   function populateVoicePanel() {
     voiceList.innerHTML = '';
-    // Filter to Chinese + English voices, prefer natural-sounding ones
-    const preferred = availableVoices.filter(v =>
-      v.lang.startsWith('zh') || v.lang.startsWith('en')
-    );
-    // If no Chinese/English voices, show all
-    const display = preferred.length > 0 ? preferred : availableVoices;
-    if (display.length === 0) {
-      voiceList.innerHTML = '<div style="font-size:0.75rem;color:var(--text-dim);padding:6px 0;">暂无可用声线</div>';
+    const hasVoices = availableVoices.length > 0;
+
+    if (!hasVoices) {
+      voiceList.innerHTML = '<div style="font-size:0.75rem;color:var(--text-dim);padding:6px 0;">正在加载声线…</div>';
       return;
     }
 
-    // Deduplicate by name
+    // Filter to Chinese + English voices
+    const zhVoices = availableVoices.filter(v => v.lang.startsWith('zh'));
+    const enVoices = availableVoices.filter(v => v.lang.startsWith('en') && !v.lang.startsWith('zh'));
+    // Other languages (fallback)
+    const otherVoices = availableVoices.filter(v =>
+      !v.lang.startsWith('zh') && !v.lang.startsWith('en')
+    );
+
+    // Build display list: Chinese first, then English, then others
+    let display = [...zhVoices, ...enVoices];
+    if (display.length === 0) display = otherVoices;
+    if (display.length === 0) {
+      // Show all available voices as last resort
+      display = availableVoices;
+    }
+
+    // Deduplicate by name+lang
     const seen = new Set();
     const deduped = display.filter(v => {
       const key = v.name + v.lang;
@@ -1309,17 +1369,44 @@
       return true;
     });
 
-    // If no selection yet, set default to first Chinese voice
-    if (!selectedVoiceURI && deduped.length > 0) {
+    if (deduped.length === 0) {
+      voiceList.innerHTML = '<div style="font-size:0.75rem;color:var(--text-dim);padding:6px 0;">暂无可用声线</div>';
+      return;
+    }
+
+    // Auto-select first Chinese voice if none selected
+    if (!selectedVoiceURI) {
       const zhVoice = deduped.find(v => v.lang.startsWith('zh'));
       selectedVoiceURI = zhVoice ? zhVoice.voiceURI : deduped[0].voiceURI;
     }
 
+    // Check if current selection is still available
+    const stillAvailable = deduped.some(v => v.voiceURI === selectedVoiceURI);
+    if (!stillAvailable) {
+      const zhVoice = deduped.find(v => v.lang.startsWith('zh'));
+      selectedVoiceURI = zhVoice ? zhVoice.voiceURI : deduped[0].voiceURI;
+    }
+
+    // Add language group headers if mixed
+    let lastLang = '';
     deduped.forEach(v => {
+      // Insert category divider
+      const langGroup = v.lang.startsWith('zh') ? 'zh' :
+                        v.lang.startsWith('en') ? 'en' : 'other';
+      if (langGroup !== lastLang) {
+        lastLang = langGroup;
+        const divider = document.createElement('div');
+        divider.style.cssText = 'font-size:0.62rem;color:var(--text-dim);padding:6px 10px 2px;letter-spacing:0.1em;' +
+          (lastLang !== 'zh' ? 'margin-top:4px;border-top:1px solid rgba(255,255,255,0.06);' : '');
+        divider.textContent = langGroup === 'zh' ? '🇨🇳 中文声线' :
+                              langGroup === 'en' ? '🇺🇸 English' : '🌐 其他';
+        voiceList.appendChild(divider);
+      }
+
       const opt = document.createElement('div');
       opt.className = 'voice-option';
       if (v.voiceURI === selectedVoiceURI) opt.classList.add('active');
-      const langLabel = v.lang.replace('_', '-');
+      const langLabel = v.lang.replace(/_/g, '-');
       opt.innerHTML = `
         <div class="radio"></div>
         <span class="vname">${v.name}</span>
@@ -1334,7 +1421,7 @@
       });
       voiceList.appendChild(opt);
     });
-    if (deduped.length > 0) voiceToggle.classList.add('has-voices');
+    voiceToggle.classList.add('has-voices');
   }
 
   function getSelectedVoice() {
@@ -1524,26 +1611,35 @@
   setupSpeech();
   createParticles();
 
-  // Initialize TTS voices
+  // Initialize TTS voices with retry for mobile (iOS Safari)
   loadVoices().then(voices => {
     populateVoicePanel();
+    // On iOS, Chinese voices may not be in the first batch — start retry loop
+    const hasChinese = voices.some(v => v.lang.startsWith('zh'));
+    if (!hasChinese) {
+      voiceLoadRetries = 1;
+      setTimeout(retryLoadVoices, 500);
+    }
   });
-  // Reload voices when they change (e.g., on Chrome)
+  // Reload voices when they change
   if (synth) {
     synth.onvoiceschanged = () => {
-      availableVoices = synth.getVoices();
-      populateVoicePanel();
+      const voices = synth.getVoices();
+      if (voices.length > availableVoices.length) {
+        availableVoices = voices;
+        populateVoicePanel();
+      }
+      // Continue retrying if still no Chinese voices
+      const hasChinese = voices.some(v => v.lang.startsWith('zh'));
+      if (!hasChinese && voiceLoadRetries < MAX_VOICE_RETRIES) {
+        voiceLoadRetries++;
+        setTimeout(retryLoadVoices, Math.min(300 * Math.pow(1.4, voiceLoadRetries), 4000));
+      }
     };
   }
 
-  // Also re-check voices after a delay for Safari
-  setTimeout(async () => {
-    const voices = synth.getVoices();
-    if (voices.length > availableVoices.length) {
-      availableVoices = voices;
-      populateVoicePanel();
-    }
-  }, 1000);
+  // Force retry loop for Safari — voices can load very late
+  setTimeout(retryLoadVoices, 1200);
 </script>
 </body>
 </html>
