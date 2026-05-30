@@ -1294,76 +1294,57 @@
   let synth = window.speechSynthesis;
   let availableVoices = [];
   let voiceLoadRetries = 0;
-  const MAX_VOICE_RETRIES = 10;
-
-  function loadVoices() {
-    return new Promise((resolve) => {
-      const voices = synth.getVoices();
-      if (voices.length > 0) {
-        availableVoices = voices;
-        resolve(voices);
-      } else {
-        synth.onvoiceschanged = () => {
-          availableVoices = synth.getVoices();
-          resolve(availableVoices);
-        };
-      }
-    });
-  }
+  const MAX_VOICE_RETRIES = 12;
+  let voiceLoadTimer = null;
 
   /**
-   * Retry voice loading with exponential backoff.
-   * On iOS Safari, Chinese voices often load much later than English ones.
-   * This function keeps polling until we find Chinese voices or hit max retries.
+   * Unified voice refresh — updates availableVoices and repopulates the panel.
+   * Called when voices change, regardless of platform.
    */
-  function retryLoadVoices() {
+  function refreshVoices() {
     const voices = synth.getVoices();
+    if (voices.length === 0) return;
+
+    // Always update and repopulate when we have voices
+    const prevLen = availableVoices.length;
+    availableVoices = voices;
+    populateVoicePanel();
+
+    // On iOS Safari, Chinese voices often arrive in a later batch.
+    // Keep polling until we find Chinese voices or hit max retries.
     const hasChinese = voices.some(v => v.lang.startsWith('zh'));
-    const hasEnglish = voices.some(v => v.lang.startsWith('en'));
-
-    // Update available voices if we got new ones
-    if (voices.length > availableVoices.length) {
-      availableVoices = voices;
-      populateVoicePanel();
-    }
-
-    // Keep retrying if we still don't have Chinese voices
     if (!hasChinese && voiceLoadRetries < MAX_VOICE_RETRIES) {
       voiceLoadRetries++;
-      const delay = Math.min(300 * Math.pow(1.4, voiceLoadRetries), 4000);
-      setTimeout(retryLoadVoices, delay);
+      const delay = Math.min(400 * Math.pow(1.35, voiceLoadRetries - 1), 4000);
+      if (voiceLoadTimer) clearTimeout(voiceLoadTimer);
+      voiceLoadTimer = setTimeout(refreshVoices, delay);
+    } else {
+      if (voiceLoadTimer) { clearTimeout(voiceLoadTimer); voiceLoadTimer = null; }
     }
   }
 
   function populateVoicePanel() {
     voiceList.innerHTML = '';
-    const hasVoices = availableVoices.length > 0;
 
-    if (!hasVoices) {
+    if (availableVoices.length === 0) {
       voiceList.innerHTML = '<div style="font-size:0.75rem;color:var(--text-dim);padding:6px 0;">正在加载声线…</div>';
       return;
     }
 
-    // Filter to Chinese + English voices
+    // Partition: Chinese first, then English, then others
     const zhVoices = availableVoices.filter(v => v.lang.startsWith('zh'));
     const enVoices = availableVoices.filter(v => v.lang.startsWith('en') && !v.lang.startsWith('zh'));
-    // Other languages (fallback)
     const otherVoices = availableVoices.filter(v =>
       !v.lang.startsWith('zh') && !v.lang.startsWith('en')
     );
 
-    // Build display list: Chinese first, then English, then others
     let display = [...zhVoices, ...enVoices];
-    if (display.length === 0) display = otherVoices;
-    if (display.length === 0) {
-      // Show all available voices as last resort
-      display = availableVoices;
-    }
+    if (display.length === 0) display = otherVoices.length ? otherVoices : availableVoices;
 
     // Deduplicate by name+lang
     const seen = new Set();
     const deduped = display.filter(v => {
-      const key = v.name + v.lang;
+      const key = v.name + '|' + v.lang;
       if (seen.has(key)) return false;
       seen.add(key);
       return true;
@@ -1374,23 +1355,15 @@
       return;
     }
 
-    // Auto-select first Chinese voice if none selected
-    if (!selectedVoiceURI) {
+    // Auto-select first Chinese voice if none selected or previous selection gone
+    if (!selectedVoiceURI || !deduped.some(v => v.voiceURI === selectedVoiceURI)) {
       const zhVoice = deduped.find(v => v.lang.startsWith('zh'));
       selectedVoiceURI = zhVoice ? zhVoice.voiceURI : deduped[0].voiceURI;
     }
 
-    // Check if current selection is still available
-    const stillAvailable = deduped.some(v => v.voiceURI === selectedVoiceURI);
-    if (!stillAvailable) {
-      const zhVoice = deduped.find(v => v.lang.startsWith('zh'));
-      selectedVoiceURI = zhVoice ? zhVoice.voiceURI : deduped[0].voiceURI;
-    }
-
-    // Add language group headers if mixed
+    // Add language group headers
     let lastLang = '';
     deduped.forEach(v => {
-      // Insert category divider
       const langGroup = v.lang.startsWith('zh') ? 'zh' :
                         v.lang.startsWith('en') ? 'en' : 'other';
       if (langGroup !== lastLang) {
@@ -1611,35 +1584,25 @@
   setupSpeech();
   createParticles();
 
-  // Initialize TTS voices with retry for mobile (iOS Safari)
-  loadVoices().then(voices => {
-    populateVoicePanel();
-    // On iOS, Chinese voices may not be in the first batch — start retry loop
-    const hasChinese = voices.some(v => v.lang.startsWith('zh'));
-    if (!hasChinese) {
-      voiceLoadRetries = 1;
-      setTimeout(retryLoadVoices, 500);
-    }
-  });
-  // Reload voices when they change
+  // ─── TTS Voices Initialization ────────────────────────────
+  // Unified approach for all platforms:
+  //   - Chrome (desktop): getVoices() returns [] initially, onvoiceschanged fires once
+  //   - Firefox (desktop): getVoices() returns voices synchronously
+  //   - Safari (desktop & iOS): voices load asynchronously, sometimes in multiple batches
+  //   - Edge (desktop): similar to Chrome
+
+  // 1. Try synchronous load first (works on Firefox, some Chrome versions)
+  refreshVoices();
+
+  // 2. Listen for the onvoiceschanged event (Chrome, Safari)
   if (synth) {
-    synth.onvoiceschanged = () => {
-      const voices = synth.getVoices();
-      if (voices.length > availableVoices.length) {
-        availableVoices = voices;
-        populateVoicePanel();
-      }
-      // Continue retrying if still no Chinese voices
-      const hasChinese = voices.some(v => v.lang.startsWith('zh'));
-      if (!hasChinese && voiceLoadRetries < MAX_VOICE_RETRIES) {
-        voiceLoadRetries++;
-        setTimeout(retryLoadVoices, Math.min(300 * Math.pow(1.4, voiceLoadRetries), 4000));
-      }
-    };
+    synth.onvoiceschanged = refreshVoices;
   }
 
-  // Force retry loop for Safari — voices can load very late
-  setTimeout(retryLoadVoices, 1200);
+  // 3. For browsers where onvoiceschanged fires before our handler is attached,
+  //    or where Chinese voices arrive late (iOS Safari), poll as fallback.
+  if (voiceLoadTimer) clearTimeout(voiceLoadTimer);
+  voiceLoadTimer = setTimeout(refreshVoices, 600);
 </script>
 </body>
 </html>
