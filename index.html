@@ -253,6 +253,138 @@
       30% { transform: translateY(-5px); opacity: 1; }
     }
 
+    /* === DEEP THINKING TOGGLE === */
+    .thinking-toggle {
+      display: flex; align-items: center; gap: 8px;
+      padding: 0 24px 8px;
+      max-width: 680px; width: 100%;
+      justify-content: flex-end;
+    }
+    .thinking-toggle label {
+      font-size: 0.7rem; color: var(--text-dim);
+      letter-spacing: 0.05em; cursor: pointer;
+      user-select: none; transition: color 0.3s;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .thinking-toggle label.active {
+      color: rgba(180,255,220,0.8);
+    }
+    .switch {
+      position: relative;
+      width: 34px; height: 20px;
+      flex-shrink: 0;
+    }
+    .switch input {
+      opacity: 0; width: 0; height: 0;
+    }
+    .switch .slider {
+      position: absolute; inset: 0;
+      background: rgba(255,255,255,0.1);
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .switch .slider::before {
+      content: '';
+      position: absolute;
+      width: 14px; height: 14px;
+      left: 3px; bottom: 3px;
+      background: rgba(255,255,255,0.4);
+      border-radius: 50%;
+      transition: all 0.3s ease;
+    }
+    .switch input:checked + .slider {
+      background: rgba(74,222,128,0.3);
+      box-shadow: 0 0 12px rgba(74,222,128,0.2);
+    }
+    .switch input:checked + .slider::before {
+      transform: translateX(14px);
+      background: #4ade80;
+    }
+    .thinking-icon {
+      font-size: 0.75rem;
+      opacity: 0.5;
+      transition: all 0.3s;
+      display: inline-flex;
+      align-items: center;
+    }
+    .thinking-icon svg {
+      filter: drop-shadow(0 0 2px rgba(255,255,255,0.2));
+    }
+    .thinking-toggle label.active .thinking-icon {
+      opacity: 1;
+    }
+    .thinking-toggle label.active .thinking-icon svg {
+      animation: icon-breathe 2.2s ease-in-out infinite;
+    }
+    @keyframes icon-breathe {
+      0%, 100% {
+        filter: drop-shadow(0 0 2px rgba(255,255,255,0.2)) drop-shadow(0 0 6px rgba(255,255,255,0.1));
+        transform: scale(1);
+      }
+      50% {
+        filter: drop-shadow(0 0 6px rgba(255,255,255,0.6)) drop-shadow(0 0 14px rgba(180,255,220,0.3));
+        transform: scale(1.12);
+      }
+    }
+
+    /* Reasoning / Thinking chain display */
+    .reasoning-block {
+      background: rgba(255,255,255,0.03);
+      border-left: 2px solid rgba(74,222,128,0.25);
+      border-radius: 0 8px 8px 0;
+      padding: 10px 14px;
+      margin-bottom: 10px;
+      font-size: 0.78rem;
+      line-height: 1.7;
+      color: rgba(255,255,255,0.5);
+      position: relative;
+    }
+    .reasoning-header {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 0.68rem;
+      color: rgba(74,222,128,0.6);
+      letter-spacing: 0.05em;
+      margin-bottom: 6px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .reasoning-header:hover { color: rgba(74,222,128,0.9); }
+    .reasoning-header .arrow {
+      transition: transform 0.3s ease;
+      font-size: 0.6rem;
+    }
+    .reasoning-header .arrow.collapsed {
+      transform: rotate(-90deg);
+    }
+    .reasoning-content {
+      overflow: hidden;
+      transition: max-height 0.4s cubic-bezier(0.22,1,0.36,1), opacity 0.3s ease;
+      max-height: 2000px;
+      opacity: 1;
+    }
+    .reasoning-content.collapsed {
+      max-height: 0;
+      opacity: 0;
+    }
+    .reasoning-text {
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .reasoning-dot {
+      display: inline-block;
+      width: 4px; height: 4px;
+      border-radius: 50%;
+      background: rgba(74,222,128,0.5);
+      animation: reasoning-dot 1.4s ease-in-out infinite;
+    }
+    .reasoning-dot:nth-child(2) { animation-delay: 0.2s; }
+    .reasoning-dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes reasoning-dot {
+      0%, 60%, 100% { opacity: 0.3; transform: scale(0.8); }
+      30% { opacity: 1; transform: scale(1.2); }
+    }
+
     /* === INPUT BAR === */
     .input-bar {
       width: 100%; max-width: 680px;
@@ -679,6 +811,22 @@
 
     /* === FIXED: Mobile input bar overflow fix === */
     @media (max-width: 768px) {
+      .thinking-toggle {
+        padding: 0 14px 6px;
+      }
+      .thinking-toggle label {
+        font-size: 0.65rem;
+      }
+      .switch {
+        width: 30px; height: 18px;
+      }
+      .switch .slider::before {
+        width: 12px; height: 12px;
+        left: 3px; bottom: 3px;
+      }
+      .switch input:checked + .slider::before {
+        transform: translateX(12px);
+      }
       .btn-group {
         flex-shrink: 0;
       }
@@ -820,6 +968,29 @@
     </div>
   </div>
 
+  <!-- Deep Thinking Toggle -->
+  <div class="thinking-toggle">
+    <label id="thinkingLabel">
+      <span class="thinking-icon">
+        <svg width="14" height="14" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align:middle;">
+          <path d="M50,50 C47,40 42,30 50,22 C58,30 53,40 50,50Z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" fill="none" opacity="0.8"/>
+          <path d="M50,50 C58,46 66,40 70,46 C66,53 58,52 50,50Z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" fill="none" opacity="0.8"/>
+          <path d="M50,50 C54,57 56,65 51,68 C46,64 46,57 50,50Z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" fill="none" opacity="0.8"/>
+          <path d="M50,50 C43,54 36,55 33,50 C37,44 43,47 50,50Z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" fill="none" opacity="0.8"/>
+          <path d="M50,50 C46,44 44,37 48,34 C53,37 53,44 50,50Z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" fill="none" opacity="0.8"/>
+          <path d="M50,50 C55,45 62,43 65,47 C61,52 55,51 50,50Z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" fill="none" opacity="0.8"/>
+          <path d="M50,50 C48,55 42,59 39,56 C41,50 46,51 50,50Z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" fill="none" opacity="0.8"/>
+          <circle cx="50" cy="50" r="2.5" fill="currentColor" opacity="0.9"/>
+        </svg>
+      </span>
+      深度思考
+      <span class="switch">
+        <input type="checkbox" id="deepThinkToggle" />
+        <span class="slider"></span>
+      </span>
+    </label>
+  </div>
+
   <!-- Input Bar -->
   <div class="input-bar">
     <div class="input-container">
@@ -881,6 +1052,8 @@
   let currentUtterance = null;
   let currentSpeakingMsg = null;
   let selectedVoiceURI = '';
+  let isDeepThinking = false;
+  let currentReasoningEl = null; // reference to the reasoning block being built
 
   // ─── ELEMENTS ─────────────────────────────────────────────
   const chatArea     = document.getElementById('chatArea');
@@ -892,6 +1065,8 @@
   const voiceToggle  = document.getElementById('voiceToggleBtn');
   const voicePanel   = document.getElementById('voicePanel');
   const voiceList    = document.getElementById('voiceList');
+  const deepThinkToggle = document.getElementById('deepThinkToggle');
+  const thinkingLabel   = document.getElementById('thinkingLabel');
 
   // ─── AUTO-RESIZE TEXTAREA ─────────────────────────────────
   userInput.addEventListener('input', () => {
@@ -906,6 +1081,17 @@
   });
   sendBtn.addEventListener('click', sendMessage);
 
+  // ─── DEEP THINKING TOGGLE ─────────────────────────────────
+  deepThinkToggle.addEventListener('change', () => {
+    isDeepThinking = deepThinkToggle.checked;
+    thinkingLabel.classList.toggle('active', isDeepThinking);
+    if (isDeepThinking) {
+      showToast('深度思考已开启 · 使用 DeepSeek V4 Pro');
+    } else {
+      showToast('已切换至 DeepSeek V4 Flash');
+    }
+  });
+
   // ─── AVATAR BREATHING ─────────────────────────────────────
   function setAvatarSpeaking(on) {
     if (on) avatar.classList.add('breathing');
@@ -913,7 +1099,7 @@
   }
 
   // ─── ADD MESSAGE ──────────────────────────────────────────
-  function addMessage(role, text) {
+  function addMessage(role, text, reasoningText) {
     const wrap = document.createElement('div');
     wrap.className = `msg ${role}`;
 
@@ -923,7 +1109,36 @@
 
     const bubble = document.createElement('div');
     bubble.className = 'msg-bubble';
-    bubble.textContent = text;
+
+    // Add reasoning block if present (AI only)
+    if (role === 'ai' && reasoningText) {
+      const block = document.createElement('div');
+      block.className = 'reasoning-block';
+
+      const header = document.createElement('div');
+      header.className = 'reasoning-header';
+      header.innerHTML = '<span class="arrow">▼</span> 已深度思考';
+      header.addEventListener('click', () => {
+        content.classList.toggle('collapsed');
+        header.querySelector('.arrow').classList.toggle('collapsed');
+      });
+
+      const content = document.createElement('div');
+      content.className = 'reasoning-content';
+      const textEl = document.createElement('div');
+      textEl.className = 'reasoning-text';
+      textEl.textContent = reasoningText;
+      content.appendChild(textEl);
+
+      block.appendChild(header);
+      block.appendChild(content);
+      bubble.appendChild(block);
+    }
+
+    // Main message text
+    const textSpan = document.createElement('span');
+    textSpan.textContent = text;
+    bubble.appendChild(textSpan);
 
     wrap.appendChild(av);
     wrap.appendChild(bubble);
@@ -996,6 +1211,23 @@
     showTyping();
     setAvatarSpeaking(true);
 
+    // Choose model based on deep thinking toggle
+    const model = isDeepThinking ? 'deepseek-reasoner' : MODEL;
+    const requestBody = {
+      model: model,
+      messages: [
+        { role: 'system', content: SYSTEM_PROMPT },
+        ...conversationHistory
+      ],
+      max_tokens: isDeepThinking ? 4096 : 1000,
+      stream: false
+    };
+
+    // reasoning model doesn't use temperature
+    if (!isDeepThinking) {
+      requestBody.temperature = 0.75;
+    }
+
     try {
       const response = await fetch(API_URL, {
         method: 'POST',
@@ -1003,16 +1235,7 @@
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${API_KEY}`
         },
-        body: JSON.stringify({
-          model: MODEL,
-          messages: [
-            { role: 'system', content: SYSTEM_PROMPT },
-            ...conversationHistory
-          ],
-          temperature: 0.75,
-          max_tokens: 1000,
-          stream: false
-        })
+        body: JSON.stringify(requestBody)
       });
 
       if (!response.ok) {
@@ -1021,10 +1244,15 @@
       }
 
       const data = await response.json();
-      const reply = data.choices?.[0]?.message?.content || '…';
+      const msg = data.choices?.[0]?.message || {};
+      const reply = msg.content || '…';
+      const reasoning = msg.reasoning_content || '';
 
       hideTyping();
-      addMessage('ai', reply);
+
+      // Add message with reasoning chain if present
+      addMessage('ai', reply, reasoning || null);
+
       conversationHistory.push({ role: 'assistant', content: reply });
       if (conversationHistory.length > MAX_HISTORY * 2) {
         conversationHistory.splice(0, 2);
